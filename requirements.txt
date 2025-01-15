@@ -3,3 +3,4 @@ loguru
 beautifulsoup4
 pyyaml
 psutil; sys_platform == 'win32'
+requests
