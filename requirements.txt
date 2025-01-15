@@ -1,1 +1,6 @@
 PySide6
+loguru
+bs4
+subprocess
+yaml
+platform

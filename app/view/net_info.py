@@ -9,7 +9,7 @@ from PySide6.QtGui import QPixmap, QPainter, QColor, QPainterPath, QFont, QIcon
 
 from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QHBoxLayout, QGridLayout, QFrame, QApplication
 
-from qfluentwidgets import (IconWidget, BodyLabel, InfoBarIcon, FluentIcon, HyperlinkLabel, PushButton, EditableComboBox ,InfoBar, InfoBarPosition, LineEdit, PasswordLineEdit, PrimaryPushButton,HeaderCardWidget, CardGroupWidget )
+from qfluentwidgets import (IconWidget, BodyLabel, InfoBarIcon, FluentIcon, HyperlinkLabel, PushButton, EditableComboBox ,InfoBar, InfoBarPosition, CheckBox, LineEdit, PasswordLineEdit, PrimaryPushButton,HeaderCardWidget, CardGroupWidget )
 
 from loguru import logger
 import requests
@@ -249,19 +249,16 @@ class NetInfoCard(GroupHeaderCardWidget):
 
         uid = self.comboBox_selectID.currentText()
 
-        password = None
-
-        for entry in self.uids:
-            if uid in entry:
-                # 获取对应的value
-                password = entry[uid]
-                logger.info(f"pass for {uid}: {password}")
-        if password is None:
-            logger.error(f"No Password for {uid}")
+        try:
+            password = self.uids[uid][0]
+            logger.info(f"pass for {uid}: {password}")
+        except Exception as e: 
+            password = None
+            logger.error(f"No Password for {uid}, for: {e}")
 
         net_interface = self.comboBox_selectNetInterface.currentText()
 
-        logger.info(f"Sign in clicked, id: {uid}, interface: {uid}, password: {password}")
+        logger.info(f"Sign in clicked, id: {uid}, interface: {net_interface}, password: {password}")
 
         url = f"https://xha.ouc.edu.cn:802/eportal/portal/login?callback=dr1003&login_method=1&user_account={uid}&user_password={password}&wlan_user_ip=0.0.0.0&wlan_user_ipv6=&wlan_user_mac=&wlan_ac_ip=&wlan_ac_name=&jsVersion=4.1&terminal_type=1&lang=zh-cn&v=5927&lang=zh"
         response = requests.get(url)
@@ -309,21 +306,27 @@ class NetInfoCard(GroupHeaderCardWidget):
         else:
             logger.debug(f"login failed: {response.status_code}")
 
-    def updateuids(self, uids_list):
+    def updateuids(self, uids_dict:dict):
 
-        self.uids = uids_list
+        self.uids = uids_dict
         self.comboBox_selectID.clear()
-        self.comboBox_selectID.addItems([next(iter(id_dict.keys())) for id_dict in uids_list])
+        self.comboBox_selectID.addItems(uids_dict.keys())
+        try:
+            self.comboBox_selectID.setText([key for key, value in uids_dict.items() if value[1] is True][0])
+        except IndexError as e:
+            logger.warning(f"No auto login id: {e}")
+        except Exception as e:
+            logger.error(f"Failed to set default id: {e}")
+
         logger.info(f"Get uids: {self.uids}")
         # self.comboBox_selectID.setText()
         
-
 class IDManagerCard(GroupHeaderCardWidget):
     """ System requirements card """
 
-    changed_uids = Signal(list)
+    changed_uids = Signal(dict)
 
-    def __init__(self, title, ids : list = None, columns_num=1, parent=None):
+    def __init__(self, title, ids : dict = None, columns_num=1, parent=None):
         super().__init__(parent)
         self.setTitle(title)
         self.setBorderRadius(8)
@@ -331,7 +334,7 @@ class IDManagerCard(GroupHeaderCardWidget):
         self._postInit(columns_num = columns_num)
 
         if ids is None:
-            self.ids = []
+            self.ids = {}
         else:
             self.ids = ids
         
@@ -342,7 +345,7 @@ class IDManagerCard(GroupHeaderCardWidget):
 
         self.line_uid = {}
         self.line_password = {}
-
+        self.checkbox = {}
         self.line_delete = {}
         self.line_save = {}
         
@@ -364,15 +367,14 @@ class IDManagerCard(GroupHeaderCardWidget):
         self.bottomLayout.setAlignment(Qt.AlignVCenter)
 
         # 添加组件到分组中
-        for index, id_dict in enumerate(self.ids):
-            uid = next(iter(id_dict.keys()))
-            password = next(iter(id_dict.values()))
-            self.createIDitem(index, uid, password)
+        for index, (uid, values) in enumerate(self.ids.items()):
+            password, auto = values
+            self.createIDitem(index, uid, password, auto)
 
         # 添加底部工具栏
         self.vBoxLayout.addLayout(self.bottomLayout)
 
-    def createIDitem(self, index, uid = '', password = ''):
+    def createIDitem(self, index, uid = '', password = '', auto = False):
         
         self.line_uid[index] = LineEdit()
         self.line_uid[index].setText(uid)
@@ -380,25 +382,40 @@ class IDManagerCard(GroupHeaderCardWidget):
         self.line_password[index] = PasswordLineEdit()
         self.line_password[index].setText(password)
 
+        self.checkbox[index] = CheckBox("自动登录")
+        self.checkbox[index].setChecked(auto)
+        self.checkbox[index].stateChanged.connect(self.on_checkbox_state_changed)
+
         self.line_delete[index] = PushButton(FluentIcon.DELETE, "删除")
         self.line_delete[index].clicked.connect(lambda: self.removeGroup(index))
         self.line_save[index] = PrimaryPushButton(FluentIcon.SAVE, "保存")
 
-        return self.addGroup(FluentIcon.INFO, "账号","账号",[self.line_uid[index],self.line_password[index], self.line_delete[index]],group_index=index )
+        return self.addGroup(FluentIcon.INFO, "账号","账号",[self.line_uid[index],self.line_password[index], self.checkbox[index], self.line_delete[index]],group_index=index )
+
+    def on_checkbox_state_changed(self):
+        # 获取当前状态改变的checkbox
+        sender = self.sender()
+        
+        # 遍历所有的checkbox
+        if sender.isChecked():
+            # 遍历所有的checkbox
+            for key, checkbox in self.checkbox.items():
+                # 如果当前checkbox不是发送信号的checkbox，并且它被勾选，则取消勾选
+                if checkbox != sender and checkbox.isChecked():
+                    checkbox.setChecked(False)
 
     def resetClicked(self):
         """ Reset clicked """
         self.line_uid = {}
         self.line_password = {}
-
+        self.checkbox = {}
         self.line_delete = {}
         self.line_save = {}
         self.removeAll()
 
-        for index, id_dict in enumerate(self.ids):
-            uid = next(iter(id_dict.keys()))
-            password = next(iter(id_dict.values()))
-            self.createIDitem(index, uid, password)
+        for index, (uid, values) in enumerate(self.ids.items()):
+            password, auto = values 
+            self.createIDitem(index, uid, password, auto)
 
     def createClicked(self, index = None ):
         logger.info(f"raw index: {index}, (type: {type(index)})")
@@ -411,13 +428,14 @@ class IDManagerCard(GroupHeaderCardWidget):
 
     def saveClicked(self):
         """ Save clicked """
-        ids = []
+        ids = {}
         counts = self.groupCount()
 
         for i in range(counts):
             uid = self.line_uid[i].text()
             password = self.line_password[i].text()
-            ids.append({uid: password})
+            auto = self.checkbox[i].isChecked()
+            ids[uid] = [password, auto]
         
         self.ids = ids
         self.save_data()
@@ -453,6 +471,6 @@ class IDManagerCard(GroupHeaderCardWidget):
                 if return_data:return self.ids
             else:
                 logger.info("No saved data found.")
-                self.ids = []
+                self.ids = {}
         except Exception as e:
             logger.info(f"Error loading data: {e}")

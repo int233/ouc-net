@@ -248,12 +248,13 @@ class NetworkOnline(QThread):
 
     network_status_signal = Signal(bool)  # 用信号发送网络是否正常的状态到主线程
 
+    network_offline_signal = Signal(bool)
+
     network_change_signal = Signal(bool)  # 用信号发送网络状态变化到主线程
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
-
         self.last_status = False
 
     def run(self):
@@ -264,6 +265,7 @@ class NetworkOnline(QThread):
                 is_online = True
             else:
                 is_online = False
+                self.network_offline_signal.emit(is_online)
 
             self.network_status_signal.emit(is_online)
             if is_online != self.last_status:
@@ -321,6 +323,7 @@ class NetworkOnline(QThread):
         return online_baidu, online_ouc, online_ouc_w
 
 
+
 class OUCNet(GalleryInterface):
 
     def __init__(self, parent=None):
@@ -346,11 +349,17 @@ class OUCNet(GalleryInterface):
 
         self.threadUpdateNetStatus = NetworkOnline(self)
         self.threadUpdateNetStatus.network_change_signal.connect(self.handleNetworkStatus)
-        
+        self.threadUpdateNetStatus.network_offline_signal.connect(self.startSignin)
+
+        # 定时连接网络
+        # self.signinTimer  = QTimer(self)
+        # self.signinTimer.timeout.connect(self.startSignin)
+        # self.signinTimer.start(5000) 
+
         # 定时更新网络通断
         self.netInfoUpdateTimer  = QTimer(self)
         self.netInfoUpdateTimer.timeout.connect(self.startNetworkUpdate)
-        self.netInfoUpdateTimer .start(3000) 
+        self.netInfoUpdateTimer.start(3000) 
 
         # 定时更新网络信息
         self.networkStatusCheckTimer  = QTimer(self)
@@ -359,18 +368,25 @@ class OUCNet(GalleryInterface):
 
         self.time_elapsed = 0
         self.network_was_down = False
+        self.login_counts_limits = 5
     
-    def update_uids(self, uids_list = None):
+    def update_uids(self, uids_dict: dict = None):
         try:
-            if uids_list is None:
+            if uids_dict is None:
                 logger.info("uids is None")
                 self.netInfoCard.updateuids(self.idManagerCard.load_data(return_data=True))
             else:
                 logger.info("uids is changed, updating")
-                self.netInfoCard.updateuids(uids_list)
+                self.netInfoCard.updateuids(uids_dict)
         except Exception as e:
             logger.error(f"Error updating uids: {e}")
 
+    def startSignin(self):
+        try:
+            logger.info(f"Start sign in")
+            self.netInfoCard.signinClicked()
+        except Exception as e:
+            logger.error(f"Auto sign in Failed: {e}")
 
     def startNetworkUpdate(self):
         """启动后台线程来更新网络信息"""
@@ -408,6 +424,7 @@ class OUCNet(GalleryInterface):
             if self.network_was_down:
                 self.network_was_down = False  # 标记网络已恢复
         else:
+            self.signin()
             if not self.network_was_down:
                 self.network_was_down = True
 

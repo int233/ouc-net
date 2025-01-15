@@ -18,7 +18,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [macos-latest,windows-latest]
+        os: [macos-13, windows-latest]
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -34,19 +34,30 @@ jobs:
           cache: 'pip'
           cache-dependency-path: |
             **/requirements*.txt
-      - name: Install pyside6
-        run: pip install pyside6
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
       - name: Install PySide6-Fluent-Widgets
         run: pip install "PySide6-Fluent-Widgets[full]" -i https://pypi.org/simple/
-      - name: ls
-        run: ls
 
-      - name: OUC-NET
+      - name: OUC-NET for macOS
+        if: matrix.os == 'macos-13'
         uses: Nuitka/Nuitka-Action@main
         with:
           nuitka-version: main
           script-name: main.py
           mode: app
+          macos-app-icon: app.icns  # Only for macOS
+          enable-plugins: pyside6
+
+      - name: OUC-NET for Windows
+        if: matrix.os == 'windows-latest'
+        uses: Nuitka/Nuitka-Action@main
+        with:
+          nuitka-version: main
+          script-name: main.py
+          mode: onefile  # Only for Windows
+          windows-icon-from-ico: app/resources/icon_512x512.png
           enable-plugins: pyside6
 
       # Uploads artifact

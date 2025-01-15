@@ -1,16 +1,14 @@
 # coding: utf-8
 from typing import List
-from PySide6.QtCore import Qt, Signal, QEasingCurve, QUrl, QSize, QTimer
-from PySide6.QtGui import QIcon, QDesktopServices, QColor, QAction
-from PySide6.QtWidgets import QApplication, QHBoxLayout, QFrame, QWidget, QSystemTrayIcon, QMenu
+from PySide6.QtCore import Qt, QUrl, QSize, QTimer
+from PySide6.QtGui import QIcon, QDesktopServices, QAction
+from PySide6.QtWidgets import QApplication,  QSystemTrayIcon, QMenu
 
-from qfluentwidgets import (NavigationAvatarWidget, NavigationItemPosition, MessageBox, FluentWindow,
+from qfluentwidgets import (NavigationItemPosition, FluentWindow,
                             SplashScreen, SystemThemeListener, isDarkTheme)
 from qfluentwidgets import FluentIcon as FIF
 
 from .gallery_interface import GalleryInterface
-from .home_interface import HomeInterface
-from .setting_interface import SettingInterface
 
 from .ouc_net import OUCNet
 
@@ -36,7 +34,7 @@ class MainWindow(FluentWindow):
 
         # 创建系统托盘图标
         self.tray_icon = QSystemTrayIcon(self)
-        self.tray_icon.setIcon(QIcon(':/gallery/images/logo.png'))  # 使用自定义图标
+        self.tray_icon.setIcon(QIcon('app/resources/icon_256x256.png'))  # 使用自定义图标
         self.tray_icon.setVisible(True)
 
         # 创建托盘菜单
@@ -105,7 +103,7 @@ class MainWindow(FluentWindow):
     def initWindow(self):
         self.resize(960, 780)
         self.setMinimumWidth(760)
-        self.setWindowIcon(QIcon(':/gallery/images/logo.png'))
+        self.setWindowIcon(QIcon('app.icns'))
         self.setWindowTitle('OUC校园网工具')
 
         self.setMicaEffectEnabled(cfg.get(cfg.micaEnabled))

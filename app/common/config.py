@@ -37,8 +37,6 @@ class Config(QConfig):
     # folders
     musicFolders = ConfigItem(
         "Folders", "LocalMusic", [], FolderListValidator())
-    downloadFolder = ConfigItem(
-        "Folders", "Download", "app/download", FolderValidator())
 
     # main window
     micaEnabled = ConfigItem("MainWindow", "MicaEnabled", isWin11(), BoolValidator())
@@ -57,13 +55,13 @@ class Config(QConfig):
 YEAR = 2024
 AUTHOR = "int0030"
 VERSION = __version__
-HELP_URL = "https://github.com/int233/LipidTrick"
-REPO_URL = "https://github.com/int233/LipidTrick"
-EXAMPLE_URL = "https://github.com/int233/LipidTrick"
-FEEDBACK_URL = "https://github.com/int233/LipidTrick/issues"
-RELEASE_URL = "https://github.com/int233/LipidTrick/releases/latest"
-ZH_SUPPORT_URL = "https://github.com/int233/LipidTrick"
-EN_SUPPORT_URL = "https://github.com/int233/LipidTrick"
+HELP_URL = "https://github.com/int233/ouc-net/"
+REPO_URL = "https://github.com/int233/ouc-net/"
+EXAMPLE_URL = "https://github.com/int233/ouc-net/"
+FEEDBACK_URL = "https://github.com/int233/ouc-net//issues"
+RELEASE_URL = "https://github.com/int233/ouc-net//releases/latest"
+ZH_SUPPORT_URL = "https://github.com/int233/ouc-net/"
+EN_SUPPORT_URL = "https://github.com/int233/ouc-net/"
 
 
 cfg = Config()
