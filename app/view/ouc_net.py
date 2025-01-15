@@ -15,7 +15,6 @@ from bs4 import BeautifulSoup
 import subprocess
 import yaml
 import platform
-import os
 
 from loguru import logger
 
@@ -148,6 +147,80 @@ class NetworkUpdateThread(QThread):
                     'ipv6': ipv6,
                     'mac': mac
                 }
+        elif platform.system() == 'Windows':
+            import psutil
+            import socket
+            
+            # 获取网络接口地址
+            net_if_addrs = psutil.net_if_addrs()
+            
+            # 获取网络接口状态
+            net_if_stats = psutil.net_if_stats()
+            
+            def get_dns_info():
+                try:
+                    result = subprocess.run(['ipconfig', '/all'], capture_output=True, text=True)
+                    infolists = result.stdout.splitlines()
+                    validinfolist = []
+                    for index, value in enumerate(infolists):
+                        if '10.191.222.147' in value:
+                            validinfolist = infolists[index: index+11]
+                    pattern = re.compile(r'\d+.\d+.\d+.\d+')
+                    match = 0
+                    dnsserver = []
+                    for info in validinfolist:
+                        if 'DNS'in info:
+                            dnsserver.append(re.findall(pattern, info)[0])
+                            match = 1
+                        if match:
+                            dnsserver.append(re.findall(pattern, info)[0])
+                            match = 0
+                except:
+                    dnsserver = []
+
+                return dnsserver
+
+            # 筛选以太网和WLAN接口并验证连接状态
+            net_status = {}
+            for interface, info in net_if_addrs.items():
+                
+                # 检查接口是否为以太网或WLAN
+                if "以太网" in interface or "WLAN" in interface:
+                    # 获取接口的网络状态
+                    stats = net_if_stats.get(interface)
+                    # 检查接口是否已连接
+                    if stats and stats.isup:
+                        
+                        logger.info(f"{interface} is connected to the network.")
+                        # 查找IPv4地址、IPv6地址、MAC地址
+                        ipv4_address = None
+                        ipv6_address = []
+                        mac_address = None
+                        
+            
+                        for addr in info:
+                            if addr.family == socket.AddressFamily.AF_INET:
+                                ipv4_address = addr.address
+                            elif addr.family == socket.AddressFamily.AF_INET6:
+                                # 排除链路本地地址和临时IPv6地址
+                                if not addr.address.startswith("fe80::") and not addr.address.startswith("::"):
+                                    ipv6_address.append(addr.address)
+                            elif addr.family == psutil.AF_LINK:
+                                mac_address = addr.address
+                                
+                        dns_info = get_dns_info()
+                        
+                        # 输出接口信息
+                        if interface == "WLAN":interface = "Wi-Fi"
+                        if interface == "以太网":interface = "Ethernet"
+                        net_status[interface] = {
+                            'type': interface,
+                            'interface': interface,
+                            'ipv4': ipv4_address if ipv4_address else 'Unknown',
+                            'ipv4_dns': dns_info if dns_info else 'Unknown',
+                            'ipv6': ipv6_address[0] if ipv6_address else 'Unknown',
+                            'mac': mac_address if mac_address else 'Unknown'
+                        }
 
         online_interface = []
         for net_type in net_status.keys():
@@ -278,7 +351,7 @@ class NetworkOnline(QThread):
         try:
             # ping baidu
             param = "-n" if platform.system().lower() == "windows" else "-c"
-            command = ["ping", param, "1", "www.baidu.com"]  # 发送一个包
+            command = ["ping", param, "1", "www.baidu.com"]  
             logger.info(f"Start ping Baidu")
             baidu_process  = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
