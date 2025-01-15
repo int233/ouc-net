@@ -32,10 +32,14 @@ jobs:
           python-version: '3.11' # Version range or exact version of a Python version to use, using SemVer's version range syntax
           architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
           cache: 'pip'
+          cache-dependency-path: |
+            **/requirements*.txt
       - name: Install pyside6
         run: pip install pyside6
       - name: Install PySide6-Fluent-Widgets
         run: pip install "PySide6-Fluent-Widgets[full]" -i https://pypi.org/simple/
+      - name: ls
+        run: ls
 
       - name: OUC-NET
         uses: Nuitka/Nuitka-Action@main
