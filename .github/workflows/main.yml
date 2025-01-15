@@ -1,0 +1,55 @@
+# windows.yml
+name: Windows
+on: 
+  # push代码时触发workflow
+  push:
+    # 忽略README.md
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE'
+  # pull_request时触发workflow
+  pull_request:
+    # 忽略README.md
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE'
+jobs:
+
+  build:
+    strategy:
+      matrix:
+        os: [macos-latest,windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+
+      # Check-out repository
+      - uses: actions/checkout@v4
+
+      # Setup Python
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11' # Version range or exact version of a Python version to use, using SemVer's version range syntax
+          architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
+          cache: 'pip'
+      - run: pip install pyside6
+      - run: pip install "PySide6-Fluent-Widgets[full]" -i https://pypi.org/simple/
+
+      - name: OUC-NET
+        uses: Nuitka/Nuitka-Action@main
+        with:
+          nuitka-version: main
+          script-name: ouc-net\main.py
+          mode: app
+          enable-plugins: pyside6
+
+      # Uploads artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ runner.os }} Build
+          path: |
+            build/*.exe
+            build/*.bin
+            build/*.app/**/*
+          include-hidden-files: true
