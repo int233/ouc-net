@@ -1,6 +1,5 @@
 PySide6
 loguru
-bs4
-yaml
-platform
+beautifulsoup4
+pyyaml
 psutil; sys_platform == 'win32'
