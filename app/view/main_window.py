@@ -35,7 +35,11 @@ class MainWindow(FluentWindow):
 
         # 创建系统托盘图标
         self.tray_icon = QSystemTrayIcon(self)
-        self.tray_icon.setIcon(QIcon('app/resources/icon_256x256.png'))  # 使用自定义图标
+        if platform.system() == 'Darwin':
+            self.tray_icon.setIcon(QIcon('app.icns'))
+        else:
+            self.tray_icon.setIcon(QIcon('app/resources/icon_256x256.png'))  # 使用自定义图标
+
         self.tray_icon.setVisible(True)
 
         # 创建托盘菜单
@@ -142,7 +146,6 @@ class MainWindow(FluentWindow):
 
     def closeEvent(self, e):
         """当关闭窗口时，不退出应用，而是将其隐藏到托盘"""
-        self.setWindowIcon(QIcon())
         e.ignore()  # 忽略关闭事件
         self.hide()     # 隐藏主窗口
         # self.themeListener.terminate()
