@@ -18,6 +18,7 @@ from ..common.signal_bus import signalBus
 from ..common.translator import Translator
 from ..common import resource
 
+import platform
 
 class MainWindow(FluentWindow):
 
@@ -51,7 +52,11 @@ class MainWindow(FluentWindow):
         self.tray_icon.setContextMenu(tray_menu)
 
         # 设置关闭事件，使应用最小化到托盘而不是退出
-        self.setWindowFlags(Qt.Window | Qt.WindowMinimizeButtonHint)
+        if platform.system() == 'Darwin':
+            self.setWindowFlags(Qt.Window | Qt.WindowMinimizeButtonHint)
+        else:
+            self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint | Qt.WindowMinimizeButtonHint)
+
         self.setAttribute(Qt.WA_DeleteOnClose, False)
         self.tray_icon.activated.connect(self.on_tray_icon_activated)
 
@@ -103,7 +108,11 @@ class MainWindow(FluentWindow):
     def initWindow(self):
         self.resize(960, 780)
         self.setMinimumWidth(760)
-        self.setWindowIcon(QIcon('app.icns'))
+        if platform.system() == 'Darwin':
+            self.setWindowIcon(QIcon('app.icns'))
+        else:
+            self.setWindowIcon(QIcon('app/resources/icon_256x256.png'))
+
         self.setWindowTitle('OUC校园网工具')
 
         self.setMicaEffectEnabled(cfg.get(cfg.micaEnabled))

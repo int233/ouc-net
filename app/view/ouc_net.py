@@ -128,7 +128,8 @@ class NetworkUpdateThread(QThread):
             
     def get_network_info(self):
         if platform.system() == 'Darwin':
-            result = subprocess.run(['system_profiler', 'SPNetworkDataType'], capture_output=True, text=True)
+            result = subprocess.Popen(['system_profiler', 'SPNetworkDataType'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            # result = subprocess.run(['system_profiler', 'SPNetworkDataType'], capture_output=True, text=True, reationflags=subprocess.CREATE_NO_WINDOW)
             result = yaml.safe_load(result.stdout)
             net_status = {}
             for type in result['Network'].keys():
@@ -159,7 +160,8 @@ class NetworkUpdateThread(QThread):
             
             def get_dns_info():
                 try:
-                    result = subprocess.run(['ipconfig', '/all'], capture_output=True, text=True)
+                    result = subprocess.Popen(['ipconfig', '/all'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                    # result = subprocess.run(['ipconfig', '/all'], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
                     infolists = result.stdout.splitlines()
                     validinfolist = []
                     for index, value in enumerate(infolists):
@@ -353,19 +355,31 @@ class NetworkOnline(QThread):
             param = "-n" if platform.system().lower() == "windows" else "-c"
             command = ["ping", param, "1", "www.baidu.com"]  
             logger.info(f"Start ping Baidu")
-            baidu_process  = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            if platform.system() == 'Darwin':
+                baidu_process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            elif platform.system() == 'Windows':
+                baidu_process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                                                 creationflags=subprocess.CREATE_NO_WINDOW)
 
             # ping ouc dns
             param = "-n" if platform.system().lower() == "windows" else "-c"
             command = ["ping", param, "1", "211.64.142.5"]
             logger.info(f"Start ping OUC")
-            ouc_process  = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            if platform.system() == 'Darwin':
+                ouc_process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            elif platform.system() == 'Windows':
+                ouc_process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                                               creationflags=subprocess.CREATE_NO_WINDOW)
     
             # ping ouc west
             param = "-n" if platform.system().lower() == "windows" else "-c"
             command = ["ping", param, "1", "192.168.101.201"]
             logger.info(f"Start ping OUC-W")
-            ouc_w_process  = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            if platform.system() == 'Darwin':
+                ouc_w_process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            elif platform.system() == 'Windows':
+                ouc_w_process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                                                 creationflags=subprocess.CREATE_NO_WINDOW)
 
             baidu_result = baidu_process.wait(timeout=5)
             ouc_result = ouc_process.wait(timeout=5)
