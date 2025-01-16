@@ -51,6 +51,7 @@ jobs:
           nuitka-version: main
           script-name: main.py
           mode: app
+          assume-yes-for-downloads: true
           macos-app-icon: app.icns  # Only for macOS
           enable-plugins: pyside6
 
@@ -61,6 +62,7 @@ jobs:
           nuitka-version: main
           script-name: main.py
           mode: onefile  # Only for Windows
+          # windows-disable-console: true
           windows-icon-from-ico: app/resources/icon_512x512.png
           enable-plugins: pyside6
 
